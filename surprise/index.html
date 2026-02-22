@@ -184,6 +184,7 @@
 
     /* ===== DETAILS ===== */
     #details {
+      display: none;
       background: #fff;
       color: #111;
       padding: 64px 24px 96px;
@@ -428,7 +429,8 @@
       let step = 0;
       function tick() {
         if (step < schedule.length) {
-          display.textContent = cities[Math.floor(Math.random() * cities.length)];
+          const isLast = step === schedule.length - 1;
+          display.textContent = isLast ? 'Amsterdam' : cities[Math.floor(Math.random() * cities.length)];
           setTimeout(tick, schedule[step++]);
         } else {
           lockParis();
@@ -449,6 +451,7 @@
 
       setTimeout(() => {
         document.getElementById('bottom-hint').classList.add('visible');
+        document.getElementById('details').style.display = 'block';
         document.body.classList.remove('no-scroll');
       }, 900);
     }
