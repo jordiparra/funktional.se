@@ -184,7 +184,7 @@
 
     /* ===== DETAILS ===== */
     #details {
-      display: none;
+      visibility: hidden;
       background: #fff;
       color: #111;
       padding: 64px 24px 96px;
@@ -451,8 +451,11 @@
 
       setTimeout(() => {
         document.getElementById('bottom-hint').classList.add('visible');
-        document.getElementById('details').style.display = 'block';
         document.body.classList.remove('no-scroll');
+        window.addEventListener('scroll', function reveal() {
+          document.getElementById('details').style.visibility = 'visible';
+          window.removeEventListener('scroll', reveal);
+        }, { once: true });
       }, 900);
     }
 
