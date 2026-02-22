@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>A surprise for you</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #111;
+    }
+
+    body.no-scroll {
+      overflow: hidden;
+      height: 100%;
+    }
+
+    /* ===== HERO ===== */
+    #hero {
+      position: relative;
+      min-height: 100dvh;
+      overflow: hidden;
+    }
+
+    /* Hero content and slot wrapper both absolutely centered */
+    #hero-content,
+    #slot-wrapper {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: calc(100% - 48px);
+      max-width: 540px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ---- Initial hero content ---- */
+    #hero-content {
+      gap: 24px;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    #hero-content.fade-out {
+      opacity: 0;
+      transform: translate(-50%, calc(-50% - 12px));
+      pointer-events: none;
+    }
+
+    .hero-question {
+      font-size: clamp(1.5rem, 6vw, 2rem);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      color: #fff;
+    }
+
+    #reveal-btn {
+      padding: 14px 40px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      font-family: inherit;
+      background: #fff;
+      color: #111;
+      border: none;
+      border-radius: 100px;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+      letter-spacing: -0.01em;
+    }
+
+    #reveal-btn:hover  { opacity: 0.88; }
+    #reveal-btn:active { transform: scale(0.97); }
+
+    /* ---- Slot wrapper ---- */
+    #slot-wrapper {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    #slot-wrapper.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* "We're going to" — always in DOM to hold height, initially invisible */
+    #pre-reveal {
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: #aaa;
+      margin-bottom: 10px;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+    }
+
+    #pre-reveal.visible {
+      visibility: visible;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+
+    #slot-display {
+      font-size: clamp(3.5rem, 20vw, 8rem);
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: #aaa;
+      min-height: 1.1em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @keyframes lockIn {
+      0%   { transform: scale(1.18); }
+      55%  { transform: scale(0.97); }
+      100% { transform: scale(1.04); }
+    }
+
+    #slot-display.locked {
+      color: #fff;
+      animation: lockIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    /* "Things to do" — pinned to the bottom of the hero */
+    #bottom-hint {
+      position: absolute;
+      bottom: 48px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.6s ease, visibility 0s linear 0.6s;
+    }
+
+    #bottom-hint.visible {
+      visibility: visible;
+      opacity: 1;
+      transition: opacity 0.6s ease;
+    }
+
+    .scroll-hint {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: #aaa;
+      font-size: 0.78rem;
+      text-decoration: none;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      animation: floatDown 2.4s ease-in-out infinite;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    @keyframes floatDown {
+      0%, 100% { transform: translateY(0); opacity: 0.5; }
+      50%       { transform: translateY(8px); opacity: 1; }
+    }
+
+    .scroll-hint svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* ===== DETAILS ===== */
+    #details {
+      background: #fff;
+      color: #111;
+      padding: 64px 24px 96px;
+    }
+
+    .details-inner {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .kicker {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #bbb;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      margin-bottom: 12px;
+    }
+
+    .description {
+      font-size: 0.95rem;
+      color: #666;
+      line-height: 1.7;
+    }
+
+    .description em { font-style: italic; }
+
+    .divider {
+      height: 1px;
+      background: #eee;
+      margin: 48px 0;
+    }
+
+    /* Attraction list */
+    .places {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .place {
+      padding: 32px 0;
+    }
+
+    .place:first-child { padding-top: 0; }
+    .place:last-child  { padding-bottom: 0; }
+
+    .place-name {
+      font-size: 1.5rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      color: #111;
+      margin-bottom: 8px;
+    }
+
+    .place-desc {
+      font-size: 0.95rem;
+      color: #666;
+      line-height: 1.7;
+    }
+
+    .place-img {
+      width: 100%;
+      aspect-ratio: 3 / 2;
+      object-fit: cover;
+      display: block;
+      margin-top: 16px;
+      border-radius: 2px;
+      background: #f0f0f0;
+    }
+
+    .credits {
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px solid #eee;
+      font-size: 0.75rem;
+      color: #bbb;
+      line-height: 1.7;
+    }
+
+    .credits a {
+      color: #bbb;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  </style>
+</head>
+<body class="no-scroll">
+
+  <!-- ===== HERO ===== -->
+  <section id="hero">
+
+    <div id="hero-content">
+      <h1 class="hero-question">Where are we going?</h1>
+      <button id="reveal-btn" onclick="startReveal()">Find out</button>
+    </div>
+
+    <div id="slot-wrapper">
+      <p id="pre-reveal">We're going to</p>
+      <div id="slot-display">—</div>
+    </div>
+
+    <div id="bottom-hint">
+      <a href="#details" class="scroll-hint" aria-label="Things to do">
+        <span>Things to do</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <polyline points="19 12 12 19 5 12"/>
+        </svg>
+      </a>
+    </div>
+
+  </section>
+
+  <!-- ===== DETAILS ===== -->
+  <section id="details">
+    <div class="details-inner">
+
+      <p class="kicker">Where we're staying</p>
+      <h2>Le Marais</h2>
+      <p class="description">
+        One of Paris's most distinctive neighborhoods, spanning the 3rd and 4th arrondissements on the Right Bank. Medieval streets lined with grand <em>hôtels particuliers</em>, world-class galleries, and some of the city's best food. The Jewish Quarter, the elegant Place des Vosges — Paris's oldest planned square — and a vibrant café culture, all within walking distance.
+      </p>
+      <img class="place-img" src="assets/le-marais.jpg" alt="Le Marais" loading="lazy">
+
+      <div class="divider"></div>
+
+      <div class="places">
+
+        <div class="place">
+          <p class="place-name">Place des Vosges</p>
+          <p class="place-desc">Paris's oldest planned square, right on the doorstep. Elegant 17th-century arcades surround formal gardens on all four sides. Perfect for a first evening walk after checking in.</p>
+          <img class="place-img" src="assets/place-des-vosges.jpg" alt="Place des Vosges" loading="lazy">
+        </div>
+
+        <div class="place">
+          <p class="place-name">Eiffel Tower</p>
+          <p class="place-desc">Go at sunset or after dark when the tower lights up. Book tickets online well in advance — the queues without them can be hours long.</p>
+          <img class="place-img" src="assets/eiffel-tower.jpg" alt="Eiffel Tower" loading="lazy">
+        </div>
+
+        <div class="place">
+          <p class="place-name">Trocadéro</p>
+          <p class="place-desc">The esplanade directly across the Seine from the tower. The most iconic view in Paris. Best at dusk when the light softens.</p>
+          <img class="place-img" src="assets/trocadero.jpg" alt="Trocadéro" loading="lazy">
+        </div>
+
+        <div class="place">
+          <p class="place-name">The Louvre</p>
+          <p class="place-desc">The world's largest art museum. You won't see everything — pick two or three wings and go deep. The Richelieu Wing is often less crowded than the sections near the Mona Lisa.</p>
+          <img class="place-img" src="assets/louvre.jpg" alt="The Louvre" loading="lazy">
+        </div>
+
+        <div class="place">
+          <p class="place-name">Musée d'Orsay</p>
+          <p class="place-desc">Housed in a former railway station, this is the world's greatest collection of Impressionist art. Monet, Renoir, Degas, Van Gogh — all under one roof.</p>
+          <img class="place-img" src="assets/orsay.jpg" alt="Musée d'Orsay" loading="lazy">
+        </div>
+
+        <div class="place">
+          <p class="place-name">Notre-Dame</p>
+          <p class="place-desc">The Gothic cathedral on Île de la Cité has just reopened after five years of restoration following the 2019 fire. One of the most significant buildings in the world, and worth seeing again.</p>
+          <img class="place-img" src="assets/notre-dame.jpg" alt="Notre-Dame" loading="lazy">
+        </div>
+
+        <div class="place">
+          <p class="place-name">Sainte-Chapelle</p>
+          <p class="place-desc">A 13th-century Gothic chapel a few steps from Notre-Dame. Fifteen floor-to-ceiling stained glass windows that fill the upper chapel with color. One of the most beautiful interiors in Europe.</p>
+          <img class="place-img" src="assets/sainte-chapelle.jpg" alt="Sainte-Chapelle" loading="lazy">
+        </div>
+
+        <div class="place">
+          <p class="place-name">Montmartre</p>
+          <p class="place-desc">The hilltop village in the 18th arrondissement. Sacré-Cœur at the top, cobblestone streets and artists' squares below. Go in the morning before the tour groups arrive.</p>
+          <img class="place-img" src="assets/montmartre.jpg" alt="Montmartre" loading="lazy">
+        </div>
+
+        <div class="place">
+          <p class="place-name">L'As du Fallafel</p>
+          <p class="place-desc">The most famous falafel in Paris, on Rue des Rosiers in Le Marais. A neighborhood institution. Go for lunch — the queue moves fast.</p>
+          <img class="place-img" src="assets/rue-des-rosiers.jpg" alt="Rue des Rosiers" loading="lazy">
+        </div>
+
+        <div class="place">
+          <p class="place-name">Marché des Enfants Rouges</p>
+          <p class="place-desc">The oldest covered market in Paris, dating to 1615. A five-minute walk from Le Marais. Stalls from a dozen cuisines — perfect for a slow breakfast or an easy lunch.</p>
+          <img class="place-img" src="assets/marche.jpg" alt="Marché des Enfants Rouges" loading="lazy">
+        </div>
+
+      </div>
+
+      <p class="credits">
+        Photos via <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener">Wikimedia Commons</a>.
+        Le Marais © Guilhem Vellut CC BY 2.0 ·
+        Place des Vosges © Carl Campbell CC BY 2.0 ·
+        Eiffel Tower © Yann Caradec CC BY-SA 2.0 ·
+        Trocadéro © Mbzt CC BY 3.0 ·
+        Louvre © Benh LIEU SONG CC BY-SA 3.0 ·
+        Musée d'Orsay © Moonik CC BY-SA 3.0 ·
+        Notre-Dame © Bibi Saint-Pol CC BY-SA 3.0 ·
+        Sainte-Chapelle © Didier B CC BY-SA 3.0 ·
+        Sacré-Cœur © Tonchino CC BY-SA 3.0 ·
+        Rue des Rosiers © Mbzt CC BY 3.0 ·
+        Marché des Enfants Rouges © Mbzt CC BY 3.0
+      </p>
+
+    </div>
+  </section>
+
+  <script>
+    const cities = [
+      'Amsterdam', 'Athens', 'Barcelona', 'Berlin', 'Brussels',
+      'Budapest', 'Copenhagen', 'Dublin', 'Helsinki', 'Lisbon',
+      'London', 'Madrid', 'Oslo', 'Prague', 'Rome',
+      'Vienna', 'Warsaw', 'Reykjavik', 'Zurich', 'Tallinn',
+      'Ljubljana', 'Bucharest', 'Bratislava', 'Belgrade', 'Valletta'
+    ];
+
+    function startReveal() {
+      document.getElementById('reveal-btn').disabled = true;
+      const heroContent = document.getElementById('hero-content');
+      heroContent.classList.add('fade-out');
+      setTimeout(() => {
+        heroContent.style.display = 'none';
+        document.getElementById('slot-wrapper').classList.add('visible');
+        runSlot();
+      }, 380);
+    }
+
+    function runSlot() {
+      const display = document.getElementById('slot-display');
+      const schedule = [
+        ...Array(30).fill(55),
+        70, 90, 120, 160, 220, 300, 420, 580, 800, 1100, 1500
+      ];
+      let step = 0;
+      function tick() {
+        if (step < schedule.length) {
+          display.textContent = cities[Math.floor(Math.random() * cities.length)];
+          setTimeout(tick, schedule[step++]);
+        } else {
+          lockParis();
+        }
+      }
+      tick();
+    }
+
+    function lockParis() {
+      const display = document.getElementById('slot-display');
+      display.textContent = 'Paris';
+      display.classList.add('locked');
+
+      setTimeout(() => {
+        document.getElementById('pre-reveal').classList.add('visible');
+        launchConfetti();
+      }, 400);
+
+      setTimeout(() => {
+        document.getElementById('bottom-hint').classList.add('visible');
+        document.body.classList.remove('no-scroll');
+      }, 900);
+    }
+
+    function launchConfetti() {
+      const colors = ['#FF6B6B', '#FF8E53', '#FFD93D', '#6BCB77', '#4ECDC4', '#45B7D1', '#a78bfa', '#f472b6', '#ffffff'];
+
+      confetti({ particleCount: 120, angle: 90, spread: 70, origin: { x: 0.5, y: 1 }, colors, startVelocity: 58, gravity: 0.88 });
+
+      setTimeout(() => {
+        confetti({ particleCount: 65, angle: 62, spread: 55, origin: { x: 0.15, y: 1 }, colors, startVelocity: 52, gravity: 0.85 });
+        confetti({ particleCount: 65, angle: 118, spread: 55, origin: { x: 0.85, y: 1 }, colors, startVelocity: 52, gravity: 0.85 });
+      }, 200);
+
+      setTimeout(() => {
+        confetti({ particleCount: 90, angle: 90, spread: 90, origin: { x: 0.5, y: 1 }, colors, startVelocity: 62, gravity: 0.85 });
+      }, 520);
+    }
+  </script>
+
+</body>
+</html>
