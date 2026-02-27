@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>A surprise for you</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    html {
+      background: #111;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #111;
+    }
+
+    body.no-scroll {
+      overflow: hidden;
+      height: 100%;
+    }
+
+    /* ===== HERO ===== */
+    #hero {
+      position: relative;
+      min-height: 100dvh;
+      overflow: hidden;
+    }
+
+    #hero-content,
+    #slot-wrapper {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: calc(100% - 48px);
+      max-width: 540px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #hero-content {
+      gap: 24px;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    #hero-content.fade-out {
+      opacity: 0;
+      transform: translate(-50%, calc(-50% - 12px));
+      pointer-events: none;
+    }
+
+    .hero-question {
+      font-size: clamp(1.5rem, 6vw, 2rem);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      color: #fff;
+    }
+
+    #reveal-btn {
+      padding: 14px 40px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      font-family: inherit;
+      background: #fff;
+      color: #111;
+      border: none;
+      border-radius: 100px;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+      letter-spacing: -0.01em;
+    }
+
+    #reveal-btn:hover  { opacity: 0.88; }
+    #reveal-btn:active { transform: scale(0.97); }
+
+    #slot-wrapper {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    #slot-wrapper.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #pre-reveal {
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: #aaa;
+      margin-bottom: 10px;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+    }
+
+    #pre-reveal.visible {
+      visibility: visible;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+
+    #slot-display {
+      font-size: clamp(3.5rem, 20vw, 8rem);
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: #aaa;
+      min-height: 1.1em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @keyframes lockIn {
+      0%   { transform: scale(1.18); }
+      55%  { transform: scale(0.97); }
+      100% { transform: scale(1.04); }
+    }
+
+    #slot-display.locked {
+      color: #fff;
+      animation: lockIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    #bottom-hint {
+      position: absolute;
+      bottom: 48px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.6s ease, visibility 0s linear 0.6s;
+    }
+
+    #bottom-hint.visible {
+      visibility: visible;
+      opacity: 1;
+      transition: opacity 0.6s ease;
+    }
+
+    .scroll-hint {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: #aaa;
+      font-size: 0.78rem;
+      text-decoration: none;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      animation: floatDown 2.4s ease-in-out infinite;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    @keyframes floatDown {
+      0%, 100% { transform: translateY(0); opacity: 0.5; }
+      50%       { transform: translateY(8px); opacity: 1; }
+    }
+
+    .scroll-hint svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* ===== DETAILS ===== */
+    #details {
+      visibility: hidden;
+      background: #fff;
+      color: #111;
+      padding: 64px 24px 96px;
+    }
+
+    .details-inner {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .kicker {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #bbb;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      margin-bottom: 12px;
+    }
+
+    .description {
+      font-size: 0.95rem;
+      color: #666;
+      line-height: 1.7;
+    }
+
+    .description em { font-style: italic; }
+
+    .divider {
+      height: 1px;
+      background: #eee;
+      margin: 48px 0;
+    }
+
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #aaa;
+      margin-bottom: 32px;
+    }
+
+    /* Attraction list */
+    .places {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .place {
+      padding: 32px 0;
+    }
+
+    .place:first-child { padding-top: 0; }
+    .place:last-child  { padding-bottom: 0; }
+
+    .place-name {
+      font-size: 1.5rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      color: #111;
+      margin-bottom: 8px;
+    }
+
+    .place-desc {
+      font-size: 0.95rem;
+      color: #666;
+      line-height: 1.7;
+    }
+
+    .place-img {
+      width: 100%;
+      aspect-ratio: 3 / 2;
+      object-fit: cover;
+      display: block;
+      margin-top: 16px;
+      border-radius: 2px;
+      background: #f0f0f0;
+    }
+
+    .credits {
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px solid #eee;
+      font-size: 0.75rem;
+      color: #bbb;
+      line-height: 1.7;
+    }
+
+    .credits a {
+      color: #bbb;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  </style>
+</head>
+<body class="no-scroll">
+
+  <!-- ===== HERO ===== -->
+  <section id="hero">
+
+    <div id="hero-content">
+      <h1 class="hero-question">Where are we going?</h1>
+      <button id="reveal-btn" onclick="startReveal()">Find out</button>
+    </div>
+
+    <div id="slot-wrapper">
+      <p id="pre-reveal">We're going to</p>
+      <div id="slot-display">—</div>
+    </div>
+
+    <div id="bottom-hint">
+      <a href="#details" class="scroll-hint" aria-label="Things to do">
+        <span>Things to do</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <polyline points="19 12 12 19 5 12"/>
+        </svg>
+      </a>
+    </div>
+
+  </section>
+
+  <!-- ===== DETAILS ===== -->
+  <section id="details">
+    <div class="details-inner">
+
+      <!-- NEIGHBORHOOD / WHERE YOU'RE STAYING -->
+      <p class="kicker">Where we're staying</p>
+      <h2>Neighborhood Name</h2>
+      <p class="description">
+        A few sentences about the area — what it's like, what makes it distinctive, what's nearby.
+        Use <em>foreign-language words</em> in italics where appropriate.
+      </p>
+      <img class="place-img" src="assets/neighborhood.jpg" alt="Neighborhood Name" loading="lazy">
+
+      <div class="divider"></div>
+
+      <p class="section-title">Places to visit</p>
+
+      <div class="places">
+
+        <!-- PLACE TEMPLATE — duplicate this block for each entry -->
+        <div class="place">
+          <p class="place-name">Place Name</p>
+          <p class="place-desc">2–4 sentences. What it is, why it's worth going, any practical tips (book in advance, best time of day, etc.).</p>
+          <img class="place-img" src="assets/place-slug.jpg" alt="Place Name" loading="lazy">
+        </div>
+
+        <div class="place">
+          <p class="place-name">Place Name</p>
+          <p class="place-desc">2–4 sentences. What it is, why it's worth going, any practical tips (book in advance, best time of day, etc.).</p>
+          <img class="place-img" src="assets/place-slug.jpg" alt="Place Name" loading="lazy">
+        </div>
+
+        <div class="place">
+          <p class="place-name">Place Name</p>
+          <p class="place-desc">2–4 sentences. What it is, why it's worth going, any practical tips (book in advance, best time of day, etc.).</p>
+          <img class="place-img" src="assets/place-slug.jpg" alt="Place Name" loading="lazy">
+        </div>
+
+        <!-- Add more .place blocks as needed. Aim for 10–16. -->
+        <!-- Put any personal / inside-joke item last. -->
+
+      </div>
+
+      <!-- PHOTO CREDITS — one line per image, format: "Place © Author License" -->
+      <p class="credits">
+        Photos via <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener">Wikimedia Commons</a>.
+        Neighborhood © Author CC BY X.X ·
+        Place One © Author CC BY-SA X.X ·
+        Place Two © Author, public domain
+      </p>
+
+    </div>
+  </section>
+
+  <script>
+    // ── SLOT MACHINE CITY POOL ───────────────────────────────────────────────
+    // ~25 plausible cities. The real destination must NOT be in this list.
+    const cities = [
+      'Amsterdam', 'Athens', 'Barcelona', 'Berlin', 'Brussels',
+      'Budapest', 'Copenhagen', 'Dublin', 'Helsinki', 'Lisbon',
+      'London', 'Madrid', 'Oslo', 'Prague', 'Rome',
+      'Vienna', 'Warsaw', 'Reykjavik', 'Zurich', 'Tallinn',
+      'Ljubljana', 'Bucharest', 'Bratislava', 'Belgrade', 'Valletta'
+    ];
+
+    // ── DESTINATION ──────────────────────────────────────────────────────────
+    // The city that locks in at the end. Also used as the final slot tick.
+    const DESTINATION = 'City Name';
+
+    // ── DECOY CITY ───────────────────────────────────────────────────────────
+    // Shown on the second-to-last tick to make the lock feel earned.
+    // Pick something plausible but wrong — ideally same region, similar length.
+    const DECOY = 'Amsterdam';
+
+    function startReveal() {
+      document.getElementById('reveal-btn').disabled = true;
+      const heroContent = document.getElementById('hero-content');
+      heroContent.classList.add('fade-out');
+      setTimeout(() => {
+        heroContent.style.display = 'none';
+        document.getElementById('slot-wrapper').classList.add('visible');
+        runSlot();
+      }, 380);
+    }
+
+    function runSlot() {
+      const display = document.getElementById('slot-display');
+      // 30 fast ticks, then progressively slower
+      const schedule = [
+        ...Array(30).fill(55),
+        70, 90, 120, 160, 220, 300, 420, 580, 800, 1100, 1500
+      ];
+      let step = 0;
+      function tick() {
+        if (step < schedule.length) {
+          const isLast      = step === schedule.length - 1;
+          const isSecondLast = step === schedule.length - 2;
+          display.textContent = isLast       ? DESTINATION
+                               : isSecondLast ? DECOY
+                               : cities[Math.floor(Math.random() * cities.length)];
+          setTimeout(tick, schedule[step++]);
+        } else {
+          lockDestination();
+        }
+      }
+      tick();
+    }
+
+    function lockDestination() {
+      const display = document.getElementById('slot-display');
+      display.textContent = DESTINATION;
+      display.classList.add('locked');
+
+      setTimeout(() => {
+        document.getElementById('pre-reveal').classList.add('visible');
+        launchConfetti();
+      }, 400);
+
+      setTimeout(() => {
+        document.getElementById('bottom-hint').classList.add('visible');
+        document.body.classList.remove('no-scroll');
+        window.addEventListener('scroll', function reveal() {
+          document.getElementById('details').style.visibility = 'visible';
+          window.removeEventListener('scroll', reveal);
+        }, { once: true });
+      }, 900);
+    }
+
+    function launchConfetti() {
+      const colors = ['#FF6B6B', '#FF8E53', '#FFD93D', '#6BCB77', '#4ECDC4', '#45B7D1', '#a78bfa', '#f472b6', '#ffffff'];
+
+      confetti({ particleCount: 120, angle: 90, spread: 70, origin: { x: 0.5, y: 1 }, colors, startVelocity: 58, gravity: 0.88 });
+
+      setTimeout(() => {
+        confetti({ particleCount: 65, angle: 62, spread: 55, origin: { x: 0.15, y: 1 }, colors, startVelocity: 52, gravity: 0.85 });
+        confetti({ particleCount: 65, angle: 118, spread: 55, origin: { x: 0.85, y: 1 }, colors, startVelocity: 52, gravity: 0.85 });
+      }, 200);
+
+      setTimeout(() => {
+        confetti({ particleCount: 90, angle: 90, spread: 90, origin: { x: 0.5, y: 1 }, colors, startVelocity: 62, gravity: 0.85 });
+      }, 520);
+    }
+  </script>
+
+</body>
+</html>
